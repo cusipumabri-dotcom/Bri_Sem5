@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reconocimiento de Zanahorias</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #fff3e0;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #e65100;
+        }
+
+        p {
+            font-size: 18px;
+        }
+
+        button {
+            background-color: #e65100;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #bf360c;
+        }
+
+        #webcam-container {
+            margin-top: 25px;
+        }
+
+        #label-container {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .resultado {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🥕 Reconocimiento de Zanahorias</h1>
+
+    <p>
+        Utiliza inteligencia artificial para reconocer
+        zanahorias buenas o malas.
+    </p>
+
+    <button onclick="init()">📷 Iniciar cámara</button>
+
+    <div id="webcam-container"></div>
+
+    <div id="label-container"></div>
+
+    <script>
+
+        const URL = "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
+
+        let model;
+        let webcam;
+        let labelContainer;
+        let maxPredictions;
+
+        async function init() {
+
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+
+            maxPredictions = model.getTotalClasses();
+
+            webcam = new tmImage.Webcam(300, 300, true);
+
+            await webcam.setup();
+
+            await webcam.play();
+
+            window.requestAnimationFrame(loop);
+
+            document
+                .getElementById("webcam-container")
+                .appendChild(webcam.canvas);
+
+            labelContainer =
+                document.getElementById("label-container");
+
+            for (let i = 0; i < maxPredictions; i++) {
+
+                labelContainer.appendChild(
+                    document.createElement("div")
+                );
+
+            }
+        }
+
+        async function loop() {
+
+            webcam.update();
+
+            await predict();
+
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+
+            const prediction =
+                await model.predict(webcam.canvas);
+
+            for (let i = 0; i < maxPredictions; i++) {
+
+                const probability =
+                    (prediction[i].probability * 100).toFixed(1);
+
+                const classPrediction =
+                    prediction[i].className +
+                    ": " +
+                    probability +
+                    "%";
+
+                labelContainer.childNodes[i]
+                    .innerHTML = classPrediction;
+            }
+        }
+
+    </script>
+
+</body>
+</html>
