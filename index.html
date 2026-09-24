@@ -14,7 +14,8 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #fff3e0;
+            background: #fff3e0;
+            margin: 0;
             padding: 30px;
         }
 
@@ -22,42 +23,69 @@
             color: #e65100;
         }
 
-        p {
-            font-size: 18px;
+        .contenedor {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
-        button {
-            background-color: #e65100;
+        button,
+        .boton-archivo {
+            background: #e65100;
             color: white;
             border: none;
-            padding: 15px 25px;
+            padding: 14px 22px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
+            margin: 8px;
+            display: inline-block;
         }
 
-        button:hover {
-            background-color: #bf360c;
+        button:hover,
+        .boton-archivo:hover {
+            background: #bf360c;
+        }
+
+        input[type="file"] {
+            display: none;
         }
 
         #webcam-container {
-            margin-top: 25px;
+            margin-top: 20px;
+        }
+
+        #imagen-container {
+            margin-top: 20px;
+        }
+
+        #imagen-subida {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 15px;
         }
 
         #label-container {
-            margin-top: 20px;
+            margin-top: 25px;
             font-size: 20px;
             font-weight: bold;
         }
 
         .resultado {
             margin-top: 20px;
-            font-size: 24px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #fff8e1;
         }
     </style>
 </head>
 
 <body>
+
+<div class="contenedor">
 
     <h1>🥕 Reconocimiento de Zanahorias</h1>
 
@@ -66,85 +94,194 @@
         zanahorias buenas o malas.
     </p>
 
-    <button onclick="init()">📷 Iniciar cámara</button>
+    <button onclick="iniciarCamara()">
+        📷 Usar cámara
+    </button>
+
+    <label for="archivo" class="boton-archivo">
+        📁 Subir imagen
+    </label>
+
+    <input
+        type="file"
+        id="archivo"
+        accept="image/*"
+        onchange="analizarImagen(event)"
+    >
 
     <div id="webcam-container"></div>
 
+    <div id="imagen-container"></div>
+
     <div id="label-container"></div>
 
-    <script>
+</div>
 
-        const URL = "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
+<script>
+    const URL = "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
 
-        let model;
-        let webcam;
-        let labelContainer;
-        let maxPredictions;
+    let model;
+    let webcam;
+    let maxPredictions;
 
-        async function init() {
+    // Cargar modelo
+    async function cargarModelo() {
 
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
 
-            model = await tmImage.load(modelURL, metadataURL);
+        model = await tmImage.load(
+            modelURL,
+            metadataURL
+        );
 
-            maxPredictions = model.getTotalClasses();
+        maxPredictions = model.getTotalClasses();
+    }
 
-            webcam = new tmImage.Webcam(300, 300, true);
+    // =========================
+    // 📷 CÁMARA
+    // =========================
 
-            await webcam.setup();
+    async function iniciarCamara() {
 
-            await webcam.play();
-
-            window.requestAnimationFrame(loop);
-
-            document
-                .getElementById("webcam-container")
-                .appendChild(webcam.canvas);
-
-            labelContainer =
-                document.getElementById("label-container");
-
-            for (let i = 0; i < maxPredictions; i++) {
-
-                labelContainer.appendChild(
-                    document.createElement("div")
-                );
-
-            }
+        if (!model) {
+            await cargarModelo();
         }
 
-        async function loop() {
+        document.getElementById("imagen-container").innerHTML = "";
 
-            webcam.update();
+        webcam = new tmImage.Webcam(
+            300,
+            300,
+            true
+        );
 
-            await predict();
+        await webcam.setup();
 
-            window.requestAnimationFrame(loop);
+        await webcam.play();
+
+        document
+            .getElementById("webcam-container")
+            .innerHTML = "";
+
+        document
+            .getElementById("webcam-container")
+            .appendChild(webcam.canvas);
+
+        window.requestAnimationFrame(
+            predecirCamara
+        );
+    }
+
+    async function predecirCamara() {
+
+        if (!webcam) return;
+
+        webcam.update();
+
+        const prediction =
+            await model.predict(
+                webcam.canvas
+            );
+
+        mostrarResultado(prediction);
+
+        window.requestAnimationFrame(
+            predecirCamara
+        );
+    }
+
+    // =========================
+    // 📁 SUBIR IMAGEN
+    // =========================
+
+    async function analizarImagen(event) {
+
+        if (!model) {
+            await cargarModelo();
         }
 
-        async function predict() {
+        const archivo = event.target.files[0];
+
+        if (!archivo) return;
+
+        // Detener cámara si estaba activa
+        if (webcam) {
+            webcam.stop();
+            webcam = null;
+        }
+
+        document.getElementById(
+            "webcam-container"
+        ).innerHTML = "";
+
+        const imagen =
+            document.createElement("img");
+
+        imagen.id = "imagen-subida";
+
+        imagen.src =
+            URL.createObjectURL(archivo);
+
+        document.getElementById(
+            "imagen-container"
+        ).innerHTML = "";
+
+        document.getElementById(
+            "imagen-container"
+        ).appendChild(imagen);
+
+        // Esperar a que cargue la imagen
+        imagen.onload = async function () {
 
             const prediction =
-                await model.predict(webcam.canvas);
+                await model.predict(imagen);
 
-            for (let i = 0; i < maxPredictions; i++) {
+            mostrarResultado(prediction);
+        };
+    }
 
-                const probability =
-                    (prediction[i].probability * 100).toFixed(1);
+    // =========================
+    // 🤖 MOSTRAR RESULTADO
+    // =========================
 
-                const classPrediction =
-                    prediction[i].className +
-                    ": " +
-                    probability +
-                    "%";
+    function mostrarResultado(prediction) {
 
-                labelContainer.childNodes[i]
-                    .innerHTML = classPrediction;
+        let mejorClase = "";
+        let mayorProbabilidad = 0;
+
+        for (let i = 0; i < prediction.length; i++) {
+
+            if (
+                prediction[i].probability >
+                mayorProbabilidad
+            ) {
+
+                mayorProbabilidad =
+                    prediction[i].probability;
+
+                mejorClase =
+                    prediction[i].className;
             }
         }
 
-    </script>
+        const porcentaje =
+            (mayorProbabilidad * 100)
+            .toFixed(1);
+
+        document.getElementById(
+            "label-container"
+        ).innerHTML = `
+            <div class="resultado">
+                🥕 Resultado:<br><br>
+                <strong>${mejorClase}</strong>
+                <br><br>
+                Confianza: ${porcentaje}%
+            </div>
+        `;
+    }
+
+</script>
 
 </body>
 </html>
