@@ -8,7 +8,6 @@
 
     <title>Carrot IA</title>
 
-    <!-- Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
@@ -26,6 +25,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 30px;
         }
 
         .contenedor {
@@ -54,7 +54,7 @@
             margin-bottom: 30px;
         }
 
-        /* CAJA PARA SUBIR IMAGEN */
+        /* CAJA PARA SUBIR */
 
         .zona-subida {
             border: 3px dashed #ff9800;
@@ -62,23 +62,23 @@
             padding: 40px 20px;
             background: #fff8f0;
             cursor: pointer;
+            display: block;
             transition: 0.3s;
         }
 
         .zona-subida:hover {
             background: #fff0df;
-            transform: scale(1.01);
         }
 
         .icono-subir {
             font-size: 50px;
-            margin-bottom: 10px;
         }
 
         .texto-subir {
             font-size: 20px;
             font-weight: bold;
             color: #e65100;
+            margin-top: 10px;
         }
 
         .texto-secundario {
@@ -90,14 +90,14 @@
             display: none;
         }
 
-        /* IMAGEN */
+        /* PREVISUALIZACIÓN */
 
         #preview {
-            margin-top: 25px;
+            margin-top: 20px;
         }
 
         #preview img {
-            width: 280px;
+            width: 300px;
             max-width: 100%;
             border-radius: 18px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
@@ -115,14 +115,14 @@
 
         #resultado {
             margin-top: 25px;
-            padding: 20px;
+            padding: 22px;
             border-radius: 18px;
             background: #fff3e0;
             display: none;
         }
 
         .titulo-resultado {
-            font-size: 18px;
+            font-size: 17px;
             color: #777;
         }
 
@@ -130,7 +130,7 @@
             font-size: 28px;
             font-weight: bold;
             color: #e65100;
-            margin: 10px 0;
+            margin: 12px 0;
         }
 
         .confianza {
@@ -154,6 +154,8 @@
             transition: width 0.5s;
         }
 
+        /* BOTÓN */
+
         .boton {
             margin-top: 25px;
             padding: 13px 25px;
@@ -163,6 +165,7 @@
             color: white;
             font-size: 16px;
             cursor: pointer;
+            display: none;
         }
 
         .boton:hover {
@@ -195,9 +198,12 @@
     </p>
 
 
-    <!-- CAJA PARA SUBIR IMAGEN -->
+    <!-- CAJA DE SUBIDA -->
 
-    <label for="archivo" class="zona-subida">
+    <label
+        id="zonaSubida"
+        for="archivo"
+        class="zona-subida">
 
         <div class="icono-subir">
             📁
@@ -213,6 +219,7 @@
 
     </label>
 
+
     <input
         type="file"
         id="archivo"
@@ -227,7 +234,7 @@
     </div>
 
 
-    <!-- PREVISUALIZACIÓN -->
+    <!-- IMAGEN -->
 
     <div id="preview"></div>
 
@@ -240,23 +247,37 @@
             Resultado del análisis
         </div>
 
-        <div id="clase" class="clase">
+        <div
+            id="clase"
+            class="clase">
         </div>
 
-        <div id="confianza" class="confianza">
+        <div
+            id="confianza"
+            class="confianza">
         </div>
 
         <div class="barra">
-            <div id="progreso" class="progreso"></div>
+
+            <div
+                id="progreso"
+                class="progreso">
+            </div>
+
         </div>
 
     </div>
 
 
+    <!-- NUEVA IMAGEN -->
+
     <button
+        id="nuevo"
         class="boton"
-        onclick="location.reload()">
+        onclick="nuevaImagen()">
+
         🔄 Analizar otra imagen
+
     </button>
 
 
@@ -270,9 +291,9 @@
 
 <script>
 
-    // ==========================================
-    // MODELO DE TEACHABLE MACHINE
-    // ==========================================
+    // ====================================
+    // URL DEL MODELO
+    // ====================================
 
     const URL =
         "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
@@ -281,9 +302,9 @@
     let modelo;
 
 
-    // ==========================================
+    // ====================================
     // CARGAR MODELO
-    // ==========================================
+    // ====================================
 
     async function cargarModelo() {
 
@@ -294,8 +315,11 @@
                 URL + "metadata.json"
             );
 
-            document.getElementById("estado").innerHTML =
-                "✅ IA lista para analizar tu imagen";
+
+            document.getElementById("estado")
+                .innerHTML =
+                "✅ IA lista para analizar";
+
 
         }
 
@@ -303,8 +327,9 @@
 
             console.error(error);
 
-            document.getElementById("estado").innerHTML =
-                "❌ No se pudo cargar la inteligencia artificial";
+            document.getElementById("estado")
+                .innerHTML =
+                "❌ No se pudo cargar la IA";
 
         }
 
@@ -314,9 +339,9 @@
     cargarModelo();
 
 
-    // ==========================================
+    // ====================================
     // SELECCIONAR IMAGEN
-    // ==========================================
+    // ====================================
 
     document
         .getElementById("archivo")
@@ -348,14 +373,18 @@
         }
 
 
+        // 🔴 OCULTAR CAJA DE SUBIDA
+
+        document.getElementById("zonaSubida")
+            .style.display = "none";
+
+
         const lector =
             new FileReader();
 
 
         lector.onload = function(e) {
 
-
-            // Mostrar imagen
 
             const imagen =
                 document.createElement("img");
@@ -373,8 +402,6 @@
                 .appendChild(imagen);
 
 
-            // Analizar cuando cargue
-
             imagen.onload = function() {
 
                 analizarImagen(imagen);
@@ -389,9 +416,9 @@
     }
 
 
-    // ==========================================
-    // ANALIZAR IMAGEN
-    // ==========================================
+    // ====================================
+    // ANALIZAR
+    // ====================================
 
     async function analizarImagen(imagen) {
 
@@ -401,7 +428,6 @@
 
 
         try {
-
 
             const predicciones =
                 await modelo.predict(imagen);
@@ -418,16 +444,13 @@
                 i++
             ) {
 
-
                 if (
                     predicciones[i].probability >
                     mayorProbabilidad
                 ) {
 
-
                     mayorProbabilidad =
                         predicciones[i].probability;
-
 
                     mejorClase =
                         predicciones[i].className;
@@ -469,19 +492,56 @@
                 "✅ Análisis completado";
 
 
+            // Mostrar botón
+
+            document.getElementById("nuevo")
+                .style.display = "inline-block";
+
         }
 
         catch(error) {
 
-
             console.error(error);
-
 
             document.getElementById("estado")
                 .innerHTML =
-                "❌ Ocurrió un error al analizar la imagen.";
+                "❌ Error al analizar la imagen.";
 
         }
+
+    }
+
+
+    // ====================================
+    // ANALIZAR OTRA IMAGEN
+    // ====================================
+
+    function nuevaImagen() {
+
+        document.getElementById("archivo")
+            .value = "";
+
+
+        document.getElementById("zonaSubida")
+            .style.display = "block";
+
+
+        document.getElementById("preview")
+            .innerHTML = "";
+
+
+        document.getElementById("resultado")
+            .style.display = "none";
+
+
+        document.getElementById("nuevo")
+            .style.display = "none";
+
+
+        document.getElementById("estado")
+            .innerHTML =
+            "✅ IA lista para analizar";
+
 
     }
 
@@ -491,4 +551,3 @@
 
 </html>
 ```
-
