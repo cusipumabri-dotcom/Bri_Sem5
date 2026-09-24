@@ -1,287 +1,494 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Reconocimiento de Zanahorias</title>
+    <title>Carrot IA</title>
 
+    <!-- Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #fff3e0;
-            margin: 0;
-            padding: 30px;
+
+        * {
+            box-sizing: border-box;
         }
 
-        h1 {
-            color: #e65100;
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fff8f0, #ffe0b2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .contenedor {
-            max-width: 600px;
-            margin: auto;
+            width: 90%;
+            max-width: 650px;
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.12);
         }
 
-        button,
-        .boton-archivo {
-            background: #e65100;
-            color: white;
-            border: none;
-            padding: 14px 22px;
-            border-radius: 10px;
+        .icono {
+            font-size: 55px;
+        }
+
+        h1 {
+            margin: 10px 0;
+            color: #e65100;
+            font-size: 32px;
+        }
+
+        .descripcion {
+            color: #666;
             font-size: 16px;
-            cursor: pointer;
-            margin: 8px;
-            display: inline-block;
+            margin-bottom: 30px;
         }
 
-        button:hover,
-        .boton-archivo:hover {
-            background: #bf360c;
+        /* CAJA PARA SUBIR IMAGEN */
+
+        .zona-subida {
+            border: 3px dashed #ff9800;
+            border-radius: 20px;
+            padding: 40px 20px;
+            background: #fff8f0;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .zona-subida:hover {
+            background: #fff0df;
+            transform: scale(1.01);
+        }
+
+        .icono-subir {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .texto-subir {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e65100;
+        }
+
+        .texto-secundario {
+            color: #888;
+            margin-top: 8px;
         }
 
         input[type="file"] {
             display: none;
         }
 
-        #webcam-container {
-            margin-top: 20px;
-        }
+        /* IMAGEN */
 
-        #imagen-container {
-            margin-top: 20px;
-        }
-
-        #imagen-subida {
-            max-width: 300px;
-            max-height: 300px;
-            border-radius: 15px;
-        }
-
-        #label-container {
+        #preview {
             margin-top: 25px;
-            font-size: 20px;
-            font-weight: bold;
         }
 
-        .resultado {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            background: #fff8e1;
+        #preview img {
+            width: 280px;
+            max-width: 100%;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
+
+        /* ESTADO */
+
+        #estado {
+            margin-top: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* RESULTADO */
+
+        #resultado {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 18px;
+            background: #fff3e0;
+            display: none;
+        }
+
+        .titulo-resultado {
+            font-size: 18px;
+            color: #777;
+        }
+
+        .clase {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e65100;
+            margin: 10px 0;
+        }
+
+        .confianza {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .barra {
+            width: 100%;
+            height: 12px;
+            background: #eeeeee;
+            border-radius: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progreso {
+            height: 100%;
+            background: #ff9800;
+            width: 0%;
+            transition: width 0.5s;
+        }
+
+        .boton {
+            margin-top: 25px;
+            padding: 13px 25px;
+            border: none;
+            border-radius: 12px;
+            background: #e65100;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .boton:hover {
+            background: #bf360c;
+        }
+
+        .pie {
+            margin-top: 30px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
 <div class="contenedor">
 
-    <h1>🥕 Reconocimiento de Zanahorias</h1>
+    <div class="icono">🥕</div>
 
-    <p>
-        Utiliza inteligencia artificial para reconocer
-        zanahorias buenas o malas.
+    <h1>Carrot IA</h1>
+
+    <p class="descripcion">
+        Sistema inteligente para reconocer
+        zanahorias buenas y malas mediante
+        inteligencia artificial.
     </p>
 
-    <button onclick="iniciarCamara()">
-        📷 Usar cámara
-    </button>
 
-    <label for="archivo" class="boton-archivo">
-        📁 Subir imagen
+    <!-- CAJA PARA SUBIR IMAGEN -->
+
+    <label for="archivo" class="zona-subida">
+
+        <div class="icono-subir">
+            📁
+        </div>
+
+        <div class="texto-subir">
+            Sube una imagen
+        </div>
+
+        <div class="texto-secundario">
+            Haz clic aquí para seleccionar una foto
+        </div>
+
     </label>
 
     <input
         type="file"
         id="archivo"
         accept="image/*"
-        onchange="analizarImagen(event)"
     >
 
-    <div id="webcam-container"></div>
 
-    <div id="imagen-container"></div>
+    <!-- ESTADO -->
 
-    <div id="label-container"></div>
+    <div id="estado">
+        🤖 Cargando inteligencia artificial...
+    </div>
+
+
+    <!-- PREVISUALIZACIÓN -->
+
+    <div id="preview"></div>
+
+
+    <!-- RESULTADO -->
+
+    <div id="resultado">
+
+        <div class="titulo-resultado">
+            Resultado del análisis
+        </div>
+
+        <div id="clase" class="clase">
+        </div>
+
+        <div id="confianza" class="confianza">
+        </div>
+
+        <div class="barra">
+            <div id="progreso" class="progreso"></div>
+        </div>
+
+    </div>
+
+
+    <button
+        class="boton"
+        onclick="location.reload()">
+        🔄 Analizar otra imagen
+    </button>
+
+
+    <div class="pie">
+        Desarrollado con Inteligencia Artificial
+        y Teachable Machine 🤖
+    </div>
 
 </div>
 
+
 <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
 
-    let model;
-    let webcam;
-    let maxPredictions;
+    // ==========================================
+    // MODELO DE TEACHABLE MACHINE
+    // ==========================================
 
-    // Cargar modelo
+    const URL =
+        "https://teachablemachine.withgoogle.com/models/2BNEvYWLj/";
+
+
+    let modelo;
+
+
+    // ==========================================
+    // CARGAR MODELO
+    // ==========================================
+
     async function cargarModelo() {
 
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
+        try {
 
-        model = await tmImage.load(
-            modelURL,
-            metadataURL
-        );
-
-        maxPredictions = model.getTotalClasses();
-    }
-
-    // =========================
-    // 📷 CÁMARA
-    // =========================
-
-    async function iniciarCamara() {
-
-        if (!model) {
-            await cargarModelo();
-        }
-
-        document.getElementById("imagen-container").innerHTML = "";
-
-        webcam = new tmImage.Webcam(
-            300,
-            300,
-            true
-        );
-
-        await webcam.setup();
-
-        await webcam.play();
-
-        document
-            .getElementById("webcam-container")
-            .innerHTML = "";
-
-        document
-            .getElementById("webcam-container")
-            .appendChild(webcam.canvas);
-
-        window.requestAnimationFrame(
-            predecirCamara
-        );
-    }
-
-    async function predecirCamara() {
-
-        if (!webcam) return;
-
-        webcam.update();
-
-        const prediction =
-            await model.predict(
-                webcam.canvas
+            modelo = await tmImage.load(
+                URL + "model.json",
+                URL + "metadata.json"
             );
 
-        mostrarResultado(prediction);
+            document.getElementById("estado").innerHTML =
+                "✅ IA lista para analizar tu imagen";
 
-        window.requestAnimationFrame(
-            predecirCamara
+        }
+
+        catch(error) {
+
+            console.error(error);
+
+            document.getElementById("estado").innerHTML =
+                "❌ No se pudo cargar la inteligencia artificial";
+
+        }
+
+    }
+
+
+    cargarModelo();
+
+
+    // ==========================================
+    // SELECCIONAR IMAGEN
+    // ==========================================
+
+    document
+        .getElementById("archivo")
+        .addEventListener(
+            "change",
+            seleccionarImagen
         );
-    }
 
-    // =========================
-    // 📁 SUBIR IMAGEN
-    // =========================
 
-    async function analizarImagen(event) {
+    function seleccionarImagen(event) {
 
-        if (!model) {
-            await cargarModelo();
+        const archivo =
+            event.target.files[0];
+
+
+        if (!archivo) {
+            return;
         }
 
-        const archivo = event.target.files[0];
 
-        if (!archivo) return;
+        if (!modelo) {
 
-        // Detener cámara si estaba activa
-        if (webcam) {
-            webcam.stop();
-            webcam = null;
+            alert(
+                "Espera unos segundos mientras se carga la IA."
+            );
+
+            return;
+
         }
 
-        document.getElementById(
-            "webcam-container"
-        ).innerHTML = "";
 
-        const imagen =
-            document.createElement("img");
+        const lector =
+            new FileReader();
 
-        imagen.id = "imagen-subida";
 
-        imagen.src =
-            URL.createObjectURL(archivo);
+        lector.onload = function(e) {
 
-        document.getElementById(
-            "imagen-container"
-        ).innerHTML = "";
 
-        document.getElementById(
-            "imagen-container"
-        ).appendChild(imagen);
+            // Mostrar imagen
 
-        // Esperar a que cargue la imagen
-        imagen.onload = async function () {
+            const imagen =
+                document.createElement("img");
 
-            const prediction =
-                await model.predict(imagen);
 
-            mostrarResultado(prediction);
+            imagen.src =
+                e.target.result;
+
+
+            document.getElementById("preview")
+                .innerHTML = "";
+
+
+            document.getElementById("preview")
+                .appendChild(imagen);
+
+
+            // Analizar cuando cargue
+
+            imagen.onload = function() {
+
+                analizarImagen(imagen);
+
+            };
+
         };
+
+
+        lector.readAsDataURL(archivo);
+
     }
 
-    // =========================
-    // 🤖 MOSTRAR RESULTADO
-    // =========================
 
-    function mostrarResultado(prediction) {
+    // ==========================================
+    // ANALIZAR IMAGEN
+    // ==========================================
 
-        let mejorClase = "";
-        let mayorProbabilidad = 0;
+    async function analizarImagen(imagen) {
 
-        for (let i = 0; i < prediction.length; i++) {
+        document.getElementById("estado")
+            .innerHTML =
+            "🤖 Analizando imagen...";
 
-            if (
-                prediction[i].probability >
-                mayorProbabilidad
+
+        try {
+
+
+            const predicciones =
+                await modelo.predict(imagen);
+
+
+            let mejorClase = "";
+
+            let mayorProbabilidad = 0;
+
+
+            for (
+                let i = 0;
+                i < predicciones.length;
+                i++
             ) {
 
-                mayorProbabilidad =
-                    prediction[i].probability;
 
-                mejorClase =
-                    prediction[i].className;
+                if (
+                    predicciones[i].probability >
+                    mayorProbabilidad
+                ) {
+
+
+                    mayorProbabilidad =
+                        predicciones[i].probability;
+
+
+                    mejorClase =
+                        predicciones[i].className;
+
+                }
+
             }
+
+
+            const porcentaje =
+                mayorProbabilidad * 100;
+
+
+            // Mostrar resultado
+
+            document.getElementById("resultado")
+                .style.display = "block";
+
+
+            document.getElementById("clase")
+                .innerHTML =
+                "🥕 " + mejorClase;
+
+
+            document.getElementById("confianza")
+                .innerHTML =
+                "Nivel de confianza: " +
+                porcentaje.toFixed(1) +
+                "%";
+
+
+            document.getElementById("progreso")
+                .style.width =
+                porcentaje + "%";
+
+
+            document.getElementById("estado")
+                .innerHTML =
+                "✅ Análisis completado";
+
+
         }
 
-        const porcentaje =
-            (mayorProbabilidad * 100)
-            .toFixed(1);
+        catch(error) {
 
-        document.getElementById(
-            "label-container"
-        ).innerHTML = `
-            <div class="resultado">
-                🥕 Resultado:<br><br>
-                <strong>${mejorClase}</strong>
-                <br><br>
-                Confianza: ${porcentaje}%
-            </div>
-        `;
+
+            console.error(error);
+
+
+            document.getElementById("estado")
+                .innerHTML =
+                "❌ Ocurrió un error al analizar la imagen.";
+
+        }
+
     }
 
 </script>
 
 </body>
+
 </html>
+```
+
